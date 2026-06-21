@@ -43,6 +43,9 @@ class SourceAdapter(ABC):
 
     name: str = "base"
     enabled: bool = False
+    # 보조 소스(서드파티 SERP / 레거시 CSE)는 True. 1차(네이버)·데모는 False.
+    # 오케스트레이터는 보조 소스를 사용자가 명시적으로 선택(sources에 "google")했을 때만 호출한다.
+    is_secondary: bool = False
 
     @abstractmethod
     async def search(

@@ -150,7 +150,8 @@ docker compose up --build
 
 `GET /api/search`
 - `q` (필수): 검색 키워드
-- `sources`: 쉼표 구분 `blog,cafe,web,news` (기본 `blog,cafe,web`)
+- `sources`: 쉼표 구분 `blog,cafe,web,news` (기본 `blog,cafe,web`).
+  `SERPER_API_KEY`/`GOOGLE_CSE_*`가 설정되면 `google`을 추가해 보조 SERP 결과를 포함할 수 있다(opt-in).
 - `sort`: `sim`(관련성) | `date`(최신) (기본 `sim`)
 - `page`, `page_size`
 - 응답: `{ query, variants[], total, page, page_size, sort, categories[], cached, quota_remaining, results[] }`

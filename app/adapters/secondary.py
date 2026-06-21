@@ -22,6 +22,7 @@ log = logging.getLogger(__name__)
 
 class SerperAdapter(SourceAdapter):
     name = "serper"
+    is_secondary = True
     ENDPOINT = "https://google.serper.dev/search"
 
     def __init__(
@@ -86,6 +87,7 @@ class SerperAdapter(SourceAdapter):
 
 class GoogleCSEAdapter(SourceAdapter):
     name = "google_cse"
+    is_secondary = True
     ENDPOINT = "https://www.googleapis.com/customsearch/v1"
 
     def __init__(

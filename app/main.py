@@ -67,6 +67,7 @@ class SourceInfo(BaseModel):
 class MetaResponse(BaseModel):
     naver_configured: bool
     demo_mode: bool
+    secondary_available: bool
     active_adapters: list[str]
     categories: list[SourceInfo]
     quota_remaining: Optional[int] = None
@@ -159,15 +160,20 @@ async def health(request: Request) -> dict:
 async def meta(request: Request) -> MetaResponse:
     settings = request.app.state.settings
     orch: SearchOrchestrator = request.app.state.orchestrator
+    secondary_available = any(getattr(a, "is_secondary", False) for a in orch.adapters)
     categories = [
         SourceInfo(key="blog", label="블로그"),
         SourceInfo(key="cafe", label="카페"),
         SourceInfo(key="web", label="웹문서"),
         SourceInfo(key="news", label="뉴스"),
     ]
+    # 보조 소스(구글/SERP)가 활성일 때만 선택 가능한 칩으로 노출
+    if secondary_available:
+        categories.append(SourceInfo(key="google", label="구글"))
     return MetaResponse(
         naver_configured=settings.naver_configured,
         demo_mode=settings.demo_mode,
+        secondary_available=secondary_available,
         active_adapters=[a.name for a in orch.adapters],
         categories=categories,
         quota_remaining=request.app.state.quota.remaining,
@@ -178,7 +184,10 @@ async def meta(request: Request) -> MetaResponse:
 async def search(
     request: Request,
     q: str = Query(..., min_length=1, max_length=100, description="검색 키워드"),
-    sources: str = Query("blog,cafe,web", description="쉼표 구분: blog,cafe,web,news"),
+    sources: str = Query(
+        "blog,cafe,web",
+        description="쉼표 구분: blog,cafe,web,news (+ google = 보조 SERP 소스, 키 설정 시)",
+    ),
     sort: str = Query("sim", pattern="^(sim|date)$", description="sim(관련성) | date(최신순)"),
     page: int = Query(1, ge=1, le=50),
     page_size: int = Query(20, ge=1, le=50),

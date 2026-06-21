@@ -70,6 +70,55 @@ def test_health_endpoint(monkeypatch):
     assert "naver" in body["active_adapters"]
 
 
+def test_meta_exposes_secondary_when_configured(monkeypatch):
+    app = _fresh_app(
+        monkeypatch,
+        NAVER_CLIENT_ID="id",
+        NAVER_CLIENT_SECRET="sec",
+        SERPER_API_KEY="serper-key",
+        DEMO_MODE="0",
+    )
+    with TestClient(app) as client:
+        r = client.get("/api/meta")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["secondary_available"] is True
+    assert any(c["key"] == "google" for c in body["categories"])
+    assert "serper" in body["active_adapters"]
+
+
+def test_search_includes_secondary_when_google_selected(monkeypatch):
+    app = _fresh_app(
+        monkeypatch,
+        NAVER_CLIENT_ID="id",
+        NAVER_CLIENT_SECRET="sec",
+        SERPER_API_KEY="serper-key",
+        DEMO_MODE="0",
+        SEARCH_CACHE_TTL="0",
+    )
+    serper_payload = {
+        "organic": [
+            {
+                "title": "국회직 8급 합격후기 모음",
+                "link": "https://tistory.com/x/9",
+                "snippet": "국회직 8급 합격 공부법 정리",
+                "date": "2025-04-01",
+                "position": 1,
+            }
+        ]
+    }
+    with respx.mock(assert_all_called=False) as mock:
+        _register_naver(mock)
+        mock.post("https://google.serper.dev/search").mock(
+            return_value=httpx.Response(200, json=serper_payload)
+        )
+        with TestClient(app) as client:
+            r = client.get("/api/search", params={"q": "국회직 8급", "sources": "blog,google"})
+    assert r.status_code == 200
+    sources_seen = {item["source"] for item in r.json()["results"]}
+    assert "serper" in sources_seen
+
+
 def test_search_demo_mode_without_keys(monkeypatch):
     app = _fresh_app(
         monkeypatch,

@@ -9,10 +9,14 @@ from app.orchestrator import SearchOrchestrator
 class FakeAdapter(SourceAdapter):
     name = "fake"
 
-    def __init__(self, factory):
+    def __init__(self, factory, *, is_secondary=False):
         self._factory = factory
         self.enabled = True
+        self.is_secondary = is_secondary
         self.calls: list[str] = []
+
+    def supported_categories(self):
+        return [] if self.is_secondary else ["blog", "cafe", "web", "news"]
 
     async def search(self, query, *, limit=20, sort="sim", categories=None):
         self.calls.append(query)
@@ -73,6 +77,34 @@ async def test_quota_exhaustion_propagates():
     orch = SearchOrchestrator(adapters=[QuotaBlockedAdapter()], cache=TTLCache(0), max_variants=1)
     with pytest.raises(QuotaExceededError):
         await orch.search("국회직 8급")
+
+
+async def test_secondary_skipped_by_default():
+    primary = FakeAdapter(_one_result)
+    secondary = FakeAdapter(_one_result, is_secondary=True)
+    orch = SearchOrchestrator(adapters=[primary, secondary], cache=TTLCache(0), max_variants=1)
+    await orch.search("국회직 8급")  # sources 미지정 → 보조소스 미호출
+    assert len(primary.calls) == 1
+    assert secondary.calls == []
+
+
+async def test_secondary_called_when_google_selected():
+    primary = FakeAdapter(_one_result)
+    secondary = FakeAdapter(_one_result, is_secondary=True)
+    orch = SearchOrchestrator(adapters=[primary, secondary], cache=TTLCache(0), max_variants=1)
+    res = await orch.search("국회직 8급", sources=["blog", "google"])
+    assert len(primary.calls) == 1
+    assert len(secondary.calls) == 1
+    assert "google" in res.categories
+
+
+async def test_only_google_selected_skips_primary():
+    primary = FakeAdapter(_one_result)
+    secondary = FakeAdapter(_one_result, is_secondary=True)
+    orch = SearchOrchestrator(adapters=[primary, secondary], cache=TTLCache(0), max_variants=1)
+    await orch.search("국회직 8급", sources=["google"])
+    assert primary.calls == []  # 네이버 카테고리 없음 → 1차 미호출
+    assert len(secondary.calls) == 1
 
 
 async def test_pagination():

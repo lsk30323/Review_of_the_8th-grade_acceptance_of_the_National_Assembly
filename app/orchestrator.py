@@ -18,6 +18,8 @@ log = logging.getLogger(__name__)
 
 # 네이버/데모가 이해하는 카테고리
 NAVER_CATEGORIES = ("blog", "cafe", "web", "news")
+# 보조 소스(구글/SERP)를 가리키는 UI source 키 (별칭 포함)
+SECONDARY_SOURCE_KEYS = {"google", "serper", "google_cse"}
 
 
 @dataclass(slots=True)
@@ -52,15 +54,24 @@ class SearchOrchestrator:
         self.default_categories = list(default_categories)
         self.naver_display = naver_display
 
-    def _resolve_categories(self, sources: list[str] | None) -> list[str]:
+    def _resolve_sources(self, sources: list[str] | None) -> tuple[list[str], bool]:
+        """요청 sources → (네이버 카테고리, 보조소스 포함여부).
+
+        - sources 미지정: 기본 카테고리, 보조소스 미포함(v1 네이버 단독 기본).
+        - "google"(또는 serper/google_cse) 포함 시에만 보조소스를 호출(쿼터 절약).
+        """
         if not sources:
-            return list(self.default_categories)
-        requested = [s for s in sources if s in NAVER_CATEGORIES]
-        return requested or list(self.default_categories)
+            return list(self.default_categories), False
+        categories = [s for s in sources if s in NAVER_CATEGORIES]
+        include_secondary = any(s in SECONDARY_SOURCE_KEYS for s in sources)
+        if not categories and not include_secondary:
+            categories = list(self.default_categories)
+        return categories, include_secondary
 
     @staticmethod
-    def _cache_key(query: str, categories: list[str], sort: str) -> str:
-        return f"{query.strip().lower()}|{','.join(sorted(categories))}|{sort}"
+    def _cache_key(query: str, categories: list[str], include_secondary: bool, sort: str) -> str:
+        sec = "g" if include_secondary else "-"
+        return f"{query.strip().lower()}|{','.join(sorted(categories))}|{sec}|{sort}"
 
     async def search(
         self,
@@ -71,9 +82,9 @@ class SearchOrchestrator:
         page: int = 1,
         page_size: int = 20,
     ) -> SearchResult:
-        categories = self._resolve_categories(sources)
+        categories, include_secondary = self._resolve_sources(sources)
         variants = build_query_variants(q, max_variants=self.max_variants)
-        key = self._cache_key(q, categories, sort)
+        key = self._cache_key(q, categories, include_secondary, sort)
 
         cached = self.cache.get(key)
         if cached is not None:
@@ -81,12 +92,13 @@ class SearchOrchestrator:
             from_cache = True
         else:
             from_cache = False
-            ranked = await self._fetch_and_rank(variants, categories, sort)
+            ranked = await self._fetch_and_rank(variants, categories, include_secondary, sort)
             self.cache.set(key, ranked)
 
         total = len(ranked)
         start = (page - 1) * page_size
         items = ranked[start : start + page_size]
+        reported = list(categories) + (["google"] if include_secondary else [])
         return SearchResult(
             query=q,
             variants=variants,
@@ -94,7 +106,7 @@ class SearchOrchestrator:
             page=page,
             page_size=page_size,
             sort=sort,
-            categories=categories,
+            categories=reported,
             from_cache=from_cache,
             quota_remaining=(self.quota.remaining if self.quota else None),
             items=items,
@@ -104,18 +116,23 @@ class SearchOrchestrator:
         self,
         variants: list[str],
         categories: list[str],
+        include_secondary: bool,
         sort: str,
     ) -> list[NormalizedResult]:
-        tasks = [
-            adapter.search(
-                variant,
-                limit=self.naver_display,
-                sort=sort,
-                categories=categories,
-            )
-            for adapter in self.adapters
-            for variant in variants
-        ]
+        tasks = []
+        for adapter in self.adapters:
+            if getattr(adapter, "is_secondary", False):
+                if not include_secondary:
+                    continue
+                for variant in variants:
+                    tasks.append(adapter.search(variant, limit=self.naver_display, sort=sort))
+            else:
+                if not categories:
+                    continue
+                for variant in variants:
+                    tasks.append(
+                        adapter.search(variant, limit=self.naver_display, sort=sort, categories=categories)
+                    )
         groups = await asyncio.gather(*tasks, return_exceptions=True)
 
         raw: list[NormalizedResult] = []

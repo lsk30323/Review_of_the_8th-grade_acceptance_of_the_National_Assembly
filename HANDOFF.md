@@ -27,5 +27,16 @@
 - **테스트**: `pytest`(51개) 전부 통과. `app/tests/`.
 - **미해결/향후**:
   - 보조 소스(SERPER/GOOGLE_CSE) 어댑터는 구현되어 있으나 v1 기본 비활성(키 설정 시 자동 활성).
+
+## P5 보조 소스(SERP) 활성화
+- **만든 것**: 보조 소스를 **opt-in 1급 소스**로 통합. `SourceAdapter.is_secondary` 플래그 추가,
+  `serper`/`google_cse`는 `is_secondary=True`. 오케스트레이터는 `sources`에 `google`(별칭
+  serper/google_cse)이 있을 때만 보조 소스를 호출(쿼터 절약). `/api/meta`는 보조 소스 활성 시
+  `secondary_available=true`와 `google` 카테고리를 노출 → 프론트가 "구글" 칩을 자동 표시.
+- **주의점**: 키 미설정 시 보조 소스 미등록 → 기존 네이버 단독 동작 그대로(기본 sources에 google 없음).
+  캐시 키에 보조소스 포함여부가 반영됨.
+- **테스트**: 56개 통과(보조소스 opt-in/skip, 구글 선택 시 호출, meta 노출 포함).
+- **라이브 검증 보류 사유**: 원격 샌드박스의 네트워크 egress 허용목록이 `openapi.naver.com`·
+  `google.serper.dev`를 차단(`host_not_allowed`) → 실 키 라이브 호출은 호스트 허용목록 추가 후 가능.
   - 캐시 SQLite 영속화는 `Cache` 프로토콜만 충족하면 교체 가능(미구현).
   - PWA 서비스워커는 프로덕션 빌드에서만 등록(dev HMR 충돌 방지).

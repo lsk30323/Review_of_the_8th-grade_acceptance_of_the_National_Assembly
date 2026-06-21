@@ -30,6 +30,7 @@ export interface SourceInfo {
 export interface MetaResponse {
   naver_configured: boolean;
   demo_mode: boolean;
+  secondary_available: boolean;
   active_adapters: string[];
   categories: SourceInfo[];
   quota_remaining: number | null;
