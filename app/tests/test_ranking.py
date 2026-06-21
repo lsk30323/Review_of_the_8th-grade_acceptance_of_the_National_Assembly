@@ -1,0 +1,62 @@
+from datetime import date
+
+from app.adapters.base import NormalizedResult
+from app.core.ranking import is_noise, rank_results, score_result
+
+TODAY = date(2026, 6, 21)
+
+
+def _r(title, snippet, url="https://blog.naver.com/u/x", source="naver_blog", posted=None):
+    return NormalizedResult(
+        title=title, snippet=snippet, url=url,
+        source=source, source_label="네이버 블로그", posted_at=posted,
+    )
+
+
+def test_noise_when_no_core_keyword():
+    assert is_noise(_r("서울시 7급 합격후기", "공부법 정리")) is True
+
+
+def test_noise_ad_domain():
+    r = _r("국회직 8급 합격후기", "수강", url="https://eduwill.net/abc", source="naver_web")
+    assert is_noise(r) is True
+
+
+def test_noise_heavy_ads_without_intent_title():
+    r = _r("국회직 8급 대비반 안내", "수강료 할인 이벤트 등록금 환급")
+    assert is_noise(r) is True
+
+
+def test_good_post_not_noise():
+    assert is_noise(_r("국회직 8급 합격후기", "국회직 8급 합격 공부법")) is False
+
+
+def test_score_title_core_and_intent():
+    r = _r("국회직 8급 합격후기", "국회직 8급 합격 공부법", posted=TODAY.isoformat())
+    s = score_result(r, today=TODAY)
+    assert s >= 2.0
+    assert "title_core_and_intent" in r.extra["score_breakdown"]
+
+
+def test_recency_helps_score():
+    recent = _r("국회직 8급 합격후기", "국회직 8급 합격", posted="2026-05-01")
+    old = _r("국회직 8급 합격후기", "국회직 8급 합격", posted="2018-01-01")
+    assert score_result(recent, today=TODAY) > score_result(old, today=TODAY)
+
+
+def test_rank_filters_noise_and_sorts_by_score():
+    noise = _r("서울시 7급 후기", "공부")  # no core -> dropped
+    strong = _r("국회직 8급 합격후기", "국회직 8급 합격 공부법", url="https://blog.naver.com/a", posted="2026-05-01")
+    weak = _r("국회직 8급 정보", "국회직 8급 채용", url="https://blog.naver.com/b", posted="2019-01-01")
+    ranked = rank_results([noise, weak, strong], today=TODAY)
+    urls = [x.url for x in ranked]
+    assert "https://blog.naver.com/a" in urls
+    assert all("7급" not in x.title for x in ranked)
+    assert ranked[0].score >= ranked[-1].score
+
+
+def test_rank_sort_by_date():
+    a = _r("국회직 8급 합격후기", "국회직 8급 합격", url="https://blog.naver.com/a", posted="2024-01-01")
+    b = _r("국회직 8급 합격후기", "국회직 8급 합격", url="https://blog.naver.com/b", posted="2026-01-01")
+    ranked = rank_results([a, b], sort="date", today=TODAY)
+    assert ranked[0].url == "https://blog.naver.com/b"

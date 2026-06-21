@@ -1,0 +1,16 @@
+{
+  "name": "assembly8-review-finder-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "국회직 8급 합격후기 검색 — 반응형 PWA 프론트엔드",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview --port 5173"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vite": "^5.4.10"
+  }
+}

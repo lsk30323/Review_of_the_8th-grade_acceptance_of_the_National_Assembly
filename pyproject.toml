@@ -1,0 +1,11 @@
+[project]
+name = "assembly8-review-finder"
+version = "0.1.0"
+description = "국회직 8급 공무원 합격후기 검색 엔진 (검색 API 오케스트레이션)"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["app/tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]
