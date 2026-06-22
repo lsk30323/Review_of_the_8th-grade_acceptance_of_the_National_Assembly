@@ -140,8 +140,8 @@ function buildSortToggle(): void {
 }
 
 // ------------------------------------------------------------------- search
-async function runSearch(reset: boolean): Promise<void> {
-  if (loading) return;
+async function runSearch(reset: boolean): Promise<boolean> {
+  if (loading) return false;
   if (reset) {
     currentPage = 1;
     accumulated = [];
@@ -165,6 +165,7 @@ async function runSearch(reset: boolean): Promise<void> {
       setStatus(`잔여 호출 ${resp.quota_remaining.toLocaleString()}`, "", false);
     }
     renderResults();
+    return true;
   } catch (err) {
     const message =
       err instanceof ApiError && err.status === 503
@@ -176,6 +177,7 @@ async function runSearch(reset: boolean): Promise<void> {
     resultsEl.replaceChildren(renderState("error", message, detail));
     resultMetaEl.replaceChildren();
     loadMoreWrap.replaceChildren();
+    return false;
   } finally {
     loading = false;
   }
@@ -213,7 +215,8 @@ function renderLoadMore(): void {
     btn.disabled = true;
     btn.textContent = "불러오는 중…";
     currentPage += 1;
-    await runSearch(false);
+    const ok = await runSearch(false);
+    if (!ok) currentPage -= 1; // 실패 시 페이지 인덱스 되돌림
   });
   loadMoreWrap.append(btn);
 }

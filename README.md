@@ -25,7 +25,7 @@
 
 ## 🏗 아키텍처
 
-```
+```text
 [모바일/데스크톱 브라우저]  ──(PWA · 반응형)──▶  GET /api/search?q=...&sources=...&sort=...
                                                        │
                                           ┌────────────▼─────────────┐
@@ -45,7 +45,7 @@
 
 ## 📁 디렉터리 구조
 
-```
+```text
 assembly8-review-finder/
 ├─ CLAUDE.md / HANDOFF.md / .env.example / .gitignore
 ├─ Dockerfile / docker-compose.yml / .dockerignore

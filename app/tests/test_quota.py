@@ -37,3 +37,11 @@ def test_zero_limit_blocks_everything():
     q = QuotaGuard(0)
     with pytest.raises(QuotaExceededError):
         q.reserve(1)
+
+
+def test_reserve_rejects_non_positive():
+    q = QuotaGuard(5)
+    for bad in (0, -1, -10):
+        with pytest.raises(ValueError):
+            q.reserve(bad)
+    assert q.used == 0  # 잘못된 예약은 사용량에 영향 없음

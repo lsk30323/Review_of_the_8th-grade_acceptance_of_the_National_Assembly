@@ -20,5 +20,10 @@ COPY app/ ./app/
 # 빌드된 프론트를 web/dist 로 복사 → FastAPI가 "/"에서 직접 서빙
 COPY --from=frontend /web/dist ./web/dist
 
+# 비루트 사용자로 실행(보안)
+RUN addgroup --system app && adduser --system --ingroup app app \
+    && chown -R app:app /app
+USER app
+
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

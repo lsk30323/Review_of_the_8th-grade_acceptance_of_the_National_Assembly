@@ -585,7 +585,7 @@ main {
 .state-detail {
   margin: 8px 0 0;
   font-size: 0.86rem;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 .state-error {
   border-color: color-mix(in srgb, var(--warn) 50%, var(--border));

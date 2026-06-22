@@ -2,12 +2,24 @@ import type { ResultItem } from "./types";
 
 const KEY = "a8finder.bookmarks.v1";
 
+function isBookmark(value: unknown): value is ResultItem {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.url === "string" &&
+    typeof v.title === "string" &&
+    typeof v.snippet === "string" &&
+    typeof v.source === "string" &&
+    typeof v.source_label === "string"
+  );
+}
+
 export function loadBookmarks(): ResultItem[] {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as ResultItem[]) : [];
+    return Array.isArray(parsed) ? parsed.filter(isBookmark) : [];
   } catch {
     return [];
   }

@@ -53,6 +53,7 @@ def dedupe_results(results: list[NormalizedResult]) -> list[NormalizedResult]:
             continue
         keep, drop = (r, existing) if r.score > existing.score else (existing, r)
         merged = set(keep.extra.get("merged_sources", []))
+        merged.update(drop.extra.get("merged_sources", []))
         merged.update({keep.source, drop.source})
         keep.extra["merged_sources"] = sorted(merged)
         best[key] = keep

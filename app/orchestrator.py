@@ -62,7 +62,7 @@ class SearchOrchestrator:
         """
         if not sources:
             return list(self.default_categories), False
-        categories = [s for s in sources if s in NAVER_CATEGORIES]
+        categories = list(dict.fromkeys(s for s in sources if s in NAVER_CATEGORIES))
         include_secondary = any(s in SECONDARY_SOURCE_KEYS for s in sources)
         if not categories and not include_secondary:
             categories = list(self.default_categories)

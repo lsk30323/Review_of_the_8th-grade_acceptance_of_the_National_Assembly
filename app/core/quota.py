@@ -29,6 +29,8 @@ class QuotaGuard:
 
     def reserve(self, n: int = 1) -> None:
         """n건을 예약한다. 한도를 넘기면 QuotaExceededError."""
+        if n <= 0:
+            raise ValueError(f"예약 건수는 양수여야 합니다: {n}")
         with self._lock:
             self._roll_over_if_needed()
             if self._used + n > self._daily_limit:
