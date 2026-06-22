@@ -56,3 +56,18 @@
   JS 문법(`node --check`)·설정 JSON·프론트 빌드·백엔드 테스트는 통과 확인.
   - 캐시 SQLite 영속화는 `Cache` 프로토콜만 충족하면 교체 가능(미구현).
   - PWA 서비스워커는 프로덕션 빌드에서만 등록(dev HMR 충돌 방지).
+
+## P8 CI 자동 빌드 (GitHub Actions)
+- **만든 것**: `.github/workflows/`에 두 워크플로 추가.
+  - `build-desktop.yml` — OS 매트릭스(ubuntu/windows/macos)에서 `web` 빌드 후 electron-builder로
+    AppImage/`.exe`(nsis)/`.dmg` 생성. 미서명(`CSC_IDENTITY_AUTO_DISCOVERY=false`), `--publish never`.
+  - `build-android.yml` — JDK 17 + Android SDK에서 `web` 빌드 → `cap add/sync android` →
+    `gradlew assembleDebug` 로 디버그 APK 생성.
+- **트리거**: `workflow_dispatch`(수동) + `push` 태그 `v*`. 태그면 `softprops/action-gh-release@v2`로
+  같은 태그 Release에 산출물 첨부. `permissions: contents: write` 필요.
+- **주의점**:
+  - Android `VITE_API_BASE`: 수동 입력 → 저장소 변수 `vars.VITE_API_BASE` → 빈 값 순. 빈 값이면 앱이
+    백엔드를 못 찾음(디버그 산출물 용도). 영구 기본값은 저장소 Actions Variables에 등록.
+  - 데스크톱 산출물은 Electron 셸 + `web/dist`까지만. 완전 자립형은 백엔드 PyInstaller 동봉 별도 필요.
+  - 산출물 이름: `desktop-windows`/`desktop-macos`/`desktop-linux`/`android-debug-apk`.
+- **검증 한계**: 워크플로 자체는 GitHub Actions에서 실행되며, 이 샌드박스에선 YAML 유효성만 확인.

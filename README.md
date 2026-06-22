@@ -136,6 +136,8 @@ docker compose up --build
   (FastAPI 백엔드를 자식 프로세스로 동봉 → 단독 실행, 키 없으면 데모 모드)
 - **Android(Capacitor)**: 백엔드 호스팅 후 `VITE_API_BASE=<url> npm --prefix web run build`
   → `npm --prefix web run cap:add:android` → `cap sync` → Android Studio에서 빌드
+- **CI 자동 빌드**: GitHub Actions가 `.exe`/`.dmg`/`AppImage`/`.apk` 를 대신 만든다.
+  Actions 탭에서 수동 실행하거나 `v*` 태그를 푸시하면 Release에 자동 첨부 — 자세한 내용은 [APP.md](APP.md).
 
 ---
 
