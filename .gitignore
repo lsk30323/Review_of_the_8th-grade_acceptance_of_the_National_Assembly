@@ -21,6 +21,11 @@ web/dist/
 web/.vite/
 *.local
 
+# --- 앱 래퍼 (Capacitor 네이티브 프로젝트 / Electron 빌드) ---
+web/android/
+web/ios/
+desktop/dist/
+
 # --- Editors / OS ---
 .vscode/
 .idea/

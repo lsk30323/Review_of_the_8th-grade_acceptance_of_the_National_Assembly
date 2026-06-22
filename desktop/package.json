@@ -1,0 +1,29 @@
+{
+  "name": "assembly8-desktop",
+  "version": "0.1.0",
+  "description": "국회직 8급 합격후기 검색 — 데스크톱 앱 (Electron)",
+  "main": "main.js",
+  "author": "assembly8-review-finder",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:dir": "electron-builder --dir"
+  },
+  "devDependencies": {
+    "electron": "^31.3.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.assembly8.reviewfinder",
+    "productName": "Assembly8 Review Finder",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "build/icon.png"],
+    "extraResources": [
+      { "from": "../web/dist", "to": "web/dist" }
+    ],
+    "linux": { "target": ["AppImage"], "category": "Education", "icon": "build/icon.png" },
+    "win": { "target": ["nsis"], "icon": "build/icon.png" },
+    "mac": { "target": ["dmg"], "category": "public.app-category.education", "icon": "build/icon.png" }
+  }
+}

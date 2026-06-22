@@ -3,14 +3,22 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "국회직 8급 합격후기 검색 — 반응형 PWA 프론트엔드",
+  "description": "국회직 8급 합격후기 검색 — 반응형 PWA 프론트엔드 + Capacitor(Android) 래퍼",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview --port 5173"
+    "preview": "vite preview --port 5173",
+    "cap:add:android": "cap add android",
+    "cap:sync": "cap sync",
+    "app:android": "npm run build && cap sync android && cap open android"
   },
   "devDependencies": {
+    "@capacitor/cli": "^6.1.2",
     "typescript": "^5.5.4",
     "vite": "^5.4.10"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2"
   }
 }

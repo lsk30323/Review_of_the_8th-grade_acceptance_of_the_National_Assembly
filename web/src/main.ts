@@ -332,8 +332,15 @@ function init(): void {
   input.focus();
 }
 
-// PWA: 프로덕션 빌드에서만 서비스워커 등록 (dev HMR과 충돌 방지)
-if (import.meta.env.PROD && "serviceWorker" in navigator) {
+// PWA: 프로덕션 웹 빌드에서만 서비스워커 등록.
+// (dev HMR · Capacitor 네이티브 웹뷰에서는 등록하지 않는다)
+const isCapacitorNative =
+  typeof (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor !==
+    "undefined" &&
+  (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor
+    ?.isNativePlatform?.() === true;
+
+if (!isCapacitorNative && import.meta.env.PROD && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/sw.js").catch(() => {
       /* SW 등록 실패는 무시 */
