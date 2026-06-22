@@ -128,6 +128,15 @@ docker compose up --build
 - 단일 컨테이너가 프론트(정적)와 API를 함께 8000 포트로 서빙한다.
 - `.env`가 있으면 자동 로드, 없으면 데모 모드로 기동한다.
 
+### 5) 앱 (데스크톱 · Android)
+
+설치형 PWA에 더해 네이티브 래퍼를 제공한다 — 자세한 빌드법은 **[APP.md](APP.md)** 참고.
+
+- **데스크톱(Electron)**: `npm --prefix web run build` 후 `npm --prefix desktop install; npm --prefix desktop start`
+  (FastAPI 백엔드를 자식 프로세스로 동봉 → 단독 실행, 키 없으면 데모 모드)
+- **Android(Capacitor)**: 백엔드 호스팅 후 `VITE_API_BASE=<url> npm --prefix web run build`
+  → `npm --prefix web run cap:add:android` → `cap sync` → Android Studio에서 빌드
+
 ---
 
 ## 🔑 환경변수 (`.env.example` 참고)

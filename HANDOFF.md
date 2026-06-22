@@ -38,5 +38,21 @@
 - **테스트**: 56개 통과(보조소스 opt-in/skip, 구글 선택 시 호출, meta 노출 포함).
 - **라이브 검증 보류 사유**: 원격 샌드박스의 네트워크 egress 허용목록이 `openapi.naver.com`·
   `google.serper.dev`를 차단(`host_not_allowed`) → 실 키 라이브 호출은 호스트 허용목록 추가 후 가능.
+
+## P7 앱 래퍼 (데스크톱 Electron + Android Capacitor)
+- **만든 것**:
+  - `desktop/` — Electron 앱. `main.js`가 빈 포트를 잡아 FastAPI(uvicorn)를 자식 프로세스로
+    띄우고 `/api/health` 확인 후 `http://127.0.0.1:<port>/` 로드. 외부 링크는 기본 브라우저로.
+    백엔드 탐색 순서: `A8_BACKEND_CMD` → 번들 바이너리 → `.venv`/시스템 파이썬. electron-builder 설정 포함.
+  - `web/capacitor.config.ts` + `web/package.json` 의존성/스크립트 — Capacitor Android 래퍼.
+- **주의점**:
+  - 데스크톱은 `web/dist` 빌드가 있어야 한다(백엔드가 정적 서빙). 키 없으면 데모 모드 자동.
+  - 모바일 웹뷰는 `capacitor://localhost` 오리진 → 상대 `/api` 안 됨. **빌드 시 `VITE_API_BASE`로
+    백엔드 절대 URL 주입** 필요. 백엔드 CORS 기본값에 capacitor/localhost 오리진 추가됨.
+  - `main.ts`는 Capacitor 네이티브에서 서비스워커 등록을 건너뛴다.
+  - 네이티브 프로젝트(`web/android`)·Electron 산출물(`desktop/dist`)은 `.gitignore` 처리.
+- **빌드/실행**: `APP.md` 참고. 최종 바이너리(APK/설치파일)는 사용자 PC(Android Studio/electron-builder)에서.
+- **검증 한계**: 이 샌드박스에선 Electron/Android SDK 바이너리 다운로드가 egress로 막혀 최종 빌드는 미실행.
+  JS 문법(`node --check`)·설정 JSON·프론트 빌드·백엔드 테스트는 통과 확인.
   - 캐시 SQLite 영속화는 `Cache` 프로토콜만 충족하면 교체 가능(미구현).
   - PWA 서비스워커는 프로덕션 빌드에서만 등록(dev HMR 충돌 방지).

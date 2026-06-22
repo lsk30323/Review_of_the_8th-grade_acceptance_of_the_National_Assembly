@@ -36,8 +36,11 @@ class Settings(BaseSettings):
     naver_display: int = 20
     demo_mode: bool = False
 
-    # CORS (프론트 dev 서버 오리진, 쉼표 구분)
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    # CORS (프론트 dev 서버 + Capacitor/Electron 앱 오리진, 쉼표 구분)
+    cors_origins: str = (
+        "http://localhost:5173,http://127.0.0.1:5173,"
+        "capacitor://localhost,https://localhost,http://localhost"
+    )
 
     @property
     def naver_configured(self) -> bool:
