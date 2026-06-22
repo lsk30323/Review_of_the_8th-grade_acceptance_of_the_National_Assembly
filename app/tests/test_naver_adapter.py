@@ -28,12 +28,14 @@ NEWS_JSON = {
 
 
 async def test_disabled_when_no_credentials():
+    """Disabled when no credentials 동작을 검증한다."""
     a = NaverSearchAdapter("", "", quota=QuotaGuard(10))
     assert a.enabled is False
     assert await a.search("국회직 8급") == []
 
 
 async def test_blog_strip_normalize_and_auth_header():
+    """Blog strip normalize and auth header 동작을 검증한다."""
     with respx.mock(assert_all_called=False) as mock:
         route = mock.get("https://openapi.naver.com/v1/search/blog.json").mock(
             return_value=httpx.Response(200, json=BLOG_JSON)
@@ -54,6 +56,7 @@ async def test_blog_strip_normalize_and_auth_header():
 
 
 async def test_news_pubdate_parsed():
+    """News pubdate parsed 동작을 검증한다."""
     with respx.mock(assert_all_called=False) as mock:
         mock.get("https://openapi.naver.com/v1/search/news.json").mock(
             return_value=httpx.Response(200, json=NEWS_JSON)
@@ -65,6 +68,7 @@ async def test_news_pubdate_parsed():
 
 
 async def test_quota_guard_blocks_before_http_call():
+    """Quota guard blocks before http call 동작을 검증한다."""
     with respx.mock(assert_all_called=False) as mock:
         route = mock.get("https://openapi.naver.com/v1/search/blog.json").mock(
             return_value=httpx.Response(200, json=BLOG_JSON)
@@ -76,6 +80,7 @@ async def test_quota_guard_blocks_before_http_call():
 
 
 async def test_multiple_categories_reserve_quota():
+    """Multiple categories reserve quota 동작을 검증한다."""
     quota = QuotaGuard(100)
     with respx.mock(assert_all_called=False) as mock:
         mock.get("https://openapi.naver.com/v1/search/blog.json").mock(

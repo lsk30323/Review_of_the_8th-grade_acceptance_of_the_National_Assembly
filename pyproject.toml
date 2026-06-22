@@ -9,3 +9,9 @@ asyncio_mode = "auto"
 testpaths = ["app/tests"]
 addopts = "-q"
 filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.interrogate]
+fail-under = 80
+ignore-init-module = true
+ignore-nested-functions = false
+exclude = [".venv", "web"]

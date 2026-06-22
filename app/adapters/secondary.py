@@ -20,15 +20,33 @@ from .base import NormalizedResult, SourceAdapter
 
 log = logging.getLogger(__name__)
 
-# Serper의 date 필드는 형식이 보장되지 않는다(예: "2025-01-01", "Jan 1, 2025").
-# 랭킹의 recency 계산은 ISO(YYYY-MM-DD)를 기대하므로 정규화하고, 파싱 실패 시 None.
+# Serper/CSE의 date 필드는 형식이 보장되지 않는다(예: "2025-01-01", "Jan 1, 2025",
+# "2025-03-12T09:00:00+09:00"). 랭킹의 recency 계산은 ISO(YYYY-MM-DD)를 기대하므로
+# 정규화하고, 파싱 실패 시 None을 반환한다.
 _SERPER_DATE_FORMATS = ("%Y-%m-%d", "%b %d, %Y", "%d %b %Y", "%Y.%m.%d", "%Y/%m/%d")
+
+# Google CSE pagemap에서 발행일을 찾을 후보 메타 키
+_CSE_DATE_KEYS = (
+    "article:published_time",
+    "article:modified_time",
+    "og:published_time",
+    "og:updated_time",
+    "datepublished",
+    "datePublished",
+    "date",
+)
 
 
 def _to_iso_date(value: Optional[str]) -> Optional[str]:
+    """다양한 형식의 날짜 문자열을 ISO(YYYY-MM-DD)로 정규화한다. 실패 시 None."""
     if not value or not isinstance(value, str):
         return None
     text = value.strip()
+    # ISO 8601 datetime (예: 2025-03-12T09:00:00+09:00, 끝의 Z 포함) 우선 시도
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00")).date().isoformat()
+    except ValueError:
+        pass
     for fmt in _SERPER_DATE_FORMATS:
         try:
             return datetime.strptime(text, fmt).date().isoformat()
@@ -37,7 +55,22 @@ def _to_iso_date(value: Optional[str]) -> Optional[str]:
     return None
 
 
+def _extract_cse_date(item: dict) -> Optional[str]:
+    """Google CSE 결과의 pagemap 메타데이터에서 발행일을 추출해 ISO로 정규화한다."""
+    pagemap = item.get("pagemap") or {}
+    for group in ("metatags", "newsarticle", "article"):
+        for entry in pagemap.get(group) or []:
+            if not isinstance(entry, dict):
+                continue
+            for key in _CSE_DATE_KEYS:
+                iso = _to_iso_date(entry.get(key))
+                if iso:
+                    return iso
+    return None
+
+
 class SerperAdapter(SourceAdapter):
+    """서드파티 SERP(serper.dev) 보조 어댑터 — 키 설정 시 활성."""
     name = "serper"
     is_secondary = True
     ENDPOINT = "https://google.serper.dev/search"
@@ -49,6 +82,7 @@ class SerperAdapter(SourceAdapter):
         client: httpx.AsyncClient | None = None,
         timeout: float = 8.0,
     ) -> None:
+        """Init."""
         self._api_key = api_key
         self._client = client
         self._timeout = timeout
@@ -62,6 +96,7 @@ class SerperAdapter(SourceAdapter):
         sort: str = "sim",
         categories: Optional[list[str]] = None,
     ) -> list[NormalizedResult]:
+        """serper.dev에 질의해 organic 결과를 정규화한다(비활성 시 빈 리스트)."""
         if not self.enabled:
             return []
         owns_client = self._client is None
@@ -103,6 +138,7 @@ class SerperAdapter(SourceAdapter):
 
 
 class GoogleCSEAdapter(SourceAdapter):
+    """레거시 Google Custom Search 보조 어댑터 — 키+cx 설정 시 활성."""
     name = "google_cse"
     is_secondary = True
     ENDPOINT = "https://www.googleapis.com/customsearch/v1"
@@ -115,6 +151,7 @@ class GoogleCSEAdapter(SourceAdapter):
         client: httpx.AsyncClient | None = None,
         timeout: float = 8.0,
     ) -> None:
+        """Init."""
         self._api_key = api_key
         self._cx = cx
         self._client = client
@@ -129,6 +166,7 @@ class GoogleCSEAdapter(SourceAdapter):
         sort: str = "sim",
         categories: Optional[list[str]] = None,
     ) -> list[NormalizedResult]:
+        """Custom Search API에 질의해 items를 정규화한다(비활성 시 빈 리스트)."""
         if not self.enabled:
             return []
         owns_client = self._client is None
@@ -167,7 +205,7 @@ class GoogleCSEAdapter(SourceAdapter):
                     snippet=strip_html(item.get("snippet", "")),
                     source="google_cse",
                     source_label="구글(CSE)",
-                    posted_at=None,
+                    posted_at=_extract_cse_date(item),
                     matched_query=query,
                 )
             )

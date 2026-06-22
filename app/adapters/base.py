@@ -25,6 +25,7 @@ class NormalizedResult:
     extra: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        """JSON 직렬화용 dict로 변환한다."""
         return {
             "title": self.title,
             "url": self.url,

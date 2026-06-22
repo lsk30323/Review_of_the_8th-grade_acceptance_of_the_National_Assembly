@@ -24,6 +24,7 @@ SECONDARY_SOURCE_KEYS = {"google", "serper", "google_cse"}
 
 @dataclass(slots=True)
 class SearchResult:
+    """오케스트레이터의 검색 결과(페이지 슬라이스 + 메타데이터)."""
     query: str
     variants: list[str]
     total: int
@@ -37,6 +38,8 @@ class SearchResult:
 
 
 class SearchOrchestrator:
+    """활성 어댑터를 병렬 호출해 중복 제거·랭킹·캐시·페이지네이션을 수행한다."""
+
     def __init__(
         self,
         *,
@@ -47,6 +50,7 @@ class SearchOrchestrator:
         default_categories: tuple[str, ...] = ("blog", "cafe", "web"),
         naver_display: int = 20,
     ) -> None:
+        """활성 어댑터만 보관하고 캐시·쿼터·변형 한도를 설정한다."""
         self.adapters = [a for a in adapters if getattr(a, "enabled", False)]
         self.cache = cache
         self.quota = quota
@@ -70,6 +74,7 @@ class SearchOrchestrator:
 
     @staticmethod
     def _cache_key(query: str, categories: list[str], include_secondary: bool, sort: str) -> str:
+        """쿼리·카테고리·보조소스·정렬로 캐시 키를 만든다."""
         sec = "g" if include_secondary else "-"
         return f"{query.strip().lower()}|{','.join(sorted(categories))}|{sec}|{sort}"
 
@@ -82,6 +87,7 @@ class SearchOrchestrator:
         page: int = 1,
         page_size: int = 20,
     ) -> SearchResult:
+        """쿼리를 검색해 정렬·페이지네이션된 SearchResult를 반환한다(캐시 우선)."""
         categories, include_secondary = self._resolve_sources(sources)
         variants = build_query_variants(q, max_variants=self.max_variants)
         key = self._cache_key(q, categories, include_secondary, sort)
@@ -119,6 +125,7 @@ class SearchOrchestrator:
         include_secondary: bool,
         sort: str,
     ) -> list[NormalizedResult]:
+        """변형 x 어댑터를 병렬 호출해 원시 결과를 모아 랭킹한다."""
         tasks = []
         for adapter in self.adapters:
             if getattr(adapter, "is_secondary", False):

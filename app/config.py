@@ -10,6 +10,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """.env에서 로드하는 앱 설정(키는 서버에만 보관)."""
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -40,21 +41,26 @@ class Settings(BaseSettings):
 
     @property
     def naver_configured(self) -> bool:
+        """Naver configured."""
         return bool(self.naver_client_id and self.naver_client_secret)
 
     @property
     def serper_configured(self) -> bool:
+        """Serper configured."""
         return bool(self.serper_api_key)
 
     @property
     def google_cse_configured(self) -> bool:
+        """Google cse configured."""
         return bool(self.google_cse_key and self.google_cse_cx)
 
     @property
     def cors_origin_list(self) -> list[str]:
+        """Cors origin list."""
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
 
 @lru_cache
 def get_settings() -> Settings:
+    """캐시된 Settings 싱글턴을 반환한다."""
     return Settings()

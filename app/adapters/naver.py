@@ -44,6 +44,7 @@ def _parse_naver_date(item: dict) -> Optional[str]:
 
 
 class NaverSearchAdapter(SourceAdapter):
+    """네이버 검색 API 어댑터 (blog/cafe/web/news, 인증·쿼터·정규화)."""
     name = "naver"
 
     def __init__(
@@ -56,6 +57,7 @@ class NaverSearchAdapter(SourceAdapter):
         client: httpx.AsyncClient | None = None,
         timeout: float = 8.0,
     ) -> None:
+        """Init."""
         self._client_id = client_id
         self._client_secret = client_secret
         self._quota = quota
@@ -65,10 +67,12 @@ class NaverSearchAdapter(SourceAdapter):
         self.enabled = bool(client_id and client_secret)
 
     def supported_categories(self) -> list[str]:
+        """Supported categories."""
         return list(CATEGORY_ENDPOINTS.keys())
 
     @property
     def _headers(self) -> dict[str, str]:
+        """Headers."""
         return {
             "X-Naver-Client-Id": self._client_id,
             "X-Naver-Client-Secret": self._client_secret,
@@ -82,6 +86,7 @@ class NaverSearchAdapter(SourceAdapter):
         sort: str = "sim",
         categories: Optional[list[str]] = None,
     ) -> list[NormalizedResult]:
+        """선택한 카테고리를 병렬 검색해 정규화 결과를 반환한다."""
         if not self.enabled:
             return []
         cats = [c for c in (categories or DEFAULT_CATEGORIES) if c in CATEGORY_ENDPOINTS]
@@ -121,6 +126,7 @@ class NaverSearchAdapter(SourceAdapter):
         display: int,
         sort_param: str,
     ) -> list[NormalizedResult]:
+        """단일 카테고리를 호출해 항목을 정규화한다(HTML strip·날짜)."""
         endpoint, source_key, source_label = CATEGORY_ENDPOINTS[category]
         params = {"query": query, "display": display, "start": 1, "sort": sort_param}
         resp = await client.get(endpoint, params=params, headers=self._headers)

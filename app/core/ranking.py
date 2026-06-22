@@ -34,6 +34,7 @@ TRUSTED_SOURCE_BONUS = {
 
 
 def _domain(url: str) -> str:
+    """Domain."""
     try:
         return urlsplit(url).netloc.lower()
     except ValueError:
@@ -57,6 +58,7 @@ def is_noise(r: NormalizedResult) -> bool:
 
 
 def _recency_bonus(posted_at: str | None, today: date) -> float:
+    """Recency bonus."""
     if not posted_at:
         return 0.0
     try:

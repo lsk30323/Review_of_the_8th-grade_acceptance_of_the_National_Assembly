@@ -23,10 +23,12 @@ WHITE = (255, 255, 255)
 
 
 def _lerp(a: float, b: float, t: float) -> float:
+    """Lerp."""
     return a + (b - a) * t
 
 
 def _dist_to_segment(px, py, ax, ay, bx, by):
+    """Dist to segment."""
     dx, dy = bx - ax, by - ay
     seg2 = dx * dx + dy * dy
     if seg2 == 0:
@@ -84,6 +86,7 @@ def _sample(x, y, size, maskable):
 
 
 def render(size: int, maskable: bool, ss: int = 4) -> bytes:
+    """Render."""
     rgba = bytearray(size * size * 4)
     inv = 1.0 / (ss * ss)
     for ty in range(size):
@@ -113,7 +116,9 @@ def render(size: int, maskable: bool, ss: int = 4) -> bytes:
 
 
 def write_png(path: Path, size: int, rgba: bytes) -> None:
+    """Write png."""
     def chunk(typ: bytes, data: bytes) -> bytes:
+        """Chunk."""
         return (
             struct.pack(">I", len(data))
             + typ
@@ -134,6 +139,7 @@ def write_png(path: Path, size: int, rgba: bytes) -> None:
 
 
 def main() -> None:
+    """Main."""
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     targets = [
         ("icon-192.png", 192, False),

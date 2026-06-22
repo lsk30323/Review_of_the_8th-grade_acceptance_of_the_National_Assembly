@@ -14,7 +14,10 @@ class QuotaExceededError(RuntimeError):
 
 
 class QuotaGuard:
+    """일일 호출 한도를 추적·예약하고 자정 경과 시 리셋한다 (스레드 안전)."""
+
     def __init__(self, daily_limit: int, *, today_fn: Callable[[], date] = date.today) -> None:
+        """일일 한도와 날짜 제공 함수(테스트 주입용)로 초기화한다."""
         self._daily_limit = max(0, int(daily_limit))
         self._today_fn = today_fn
         self._lock = threading.Lock()
@@ -22,6 +25,7 @@ class QuotaGuard:
         self._used = 0
 
     def _roll_over_if_needed(self) -> None:
+        """Roll over if needed."""
         today = self._today_fn()
         if today != self._day:
             self._day = today
@@ -40,6 +44,7 @@ class QuotaGuard:
             self._used += n
 
     def try_reserve(self, n: int = 1) -> bool:
+        """Try reserve."""
         try:
             self.reserve(n)
             return True
@@ -48,16 +53,19 @@ class QuotaGuard:
 
     @property
     def remaining(self) -> int:
+        """Remaining."""
         with self._lock:
             self._roll_over_if_needed()
             return max(0, self._daily_limit - self._used)
 
     @property
     def used(self) -> int:
+        """Used."""
         with self._lock:
             self._roll_over_if_needed()
             return self._used
 
     @property
     def daily_limit(self) -> int:
+        """Daily limit."""
         return self._daily_limit

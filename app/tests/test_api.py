@@ -19,6 +19,7 @@ SECRET = "super-secret-value-xyz"
 
 
 def _register_naver(mock):
+    """Register naver."""
     for cat in ("blog", "cafearticle", "webkr", "news"):
         mock.get(f"https://openapi.naver.com/v1/search/{cat}.json").mock(
             return_value=httpx.Response(200, json=NAVER_ITEMS)
@@ -26,6 +27,7 @@ def _register_naver(mock):
 
 
 def _fresh_app(monkeypatch, **env):
+    """Fresh app."""
     for k, v in env.items():
         monkeypatch.setenv(k, v)
     get_settings.cache_clear()
@@ -34,6 +36,7 @@ def _fresh_app(monkeypatch, **env):
 
 
 def test_search_endpoint_with_naver(monkeypatch):
+    """Search endpoint with naver 동작을 검증한다."""
     app = _fresh_app(
         monkeypatch,
         NAVER_CLIENT_ID="client-id-123",
@@ -55,6 +58,7 @@ def test_search_endpoint_with_naver(monkeypatch):
 
 
 def test_health_endpoint(monkeypatch):
+    """Health endpoint 동작을 검증한다."""
     app = _fresh_app(
         monkeypatch,
         NAVER_CLIENT_ID="id",
@@ -71,6 +75,7 @@ def test_health_endpoint(monkeypatch):
 
 
 def test_meta_exposes_secondary_when_configured(monkeypatch):
+    """Meta exposes secondary when configured 동작을 검증한다."""
     app = _fresh_app(
         monkeypatch,
         NAVER_CLIENT_ID="id",
@@ -88,6 +93,7 @@ def test_meta_exposes_secondary_when_configured(monkeypatch):
 
 
 def test_search_includes_secondary_when_google_selected(monkeypatch):
+    """Search includes secondary when google selected 동작을 검증한다."""
     app = _fresh_app(
         monkeypatch,
         NAVER_CLIENT_ID="id",
@@ -120,6 +126,7 @@ def test_search_includes_secondary_when_google_selected(monkeypatch):
 
 
 def test_search_demo_mode_without_keys(monkeypatch):
+    """Search demo mode without keys 동작을 검증한다."""
     app = _fresh_app(
         monkeypatch,
         NAVER_CLIENT_ID="",
@@ -137,6 +144,7 @@ def test_search_demo_mode_without_keys(monkeypatch):
 
 
 def test_search_503_when_no_sources(monkeypatch):
+    """Search 503 when no sources 동작을 검증한다."""
     app = _fresh_app(
         monkeypatch,
         NAVER_CLIENT_ID="",
@@ -152,6 +160,7 @@ def test_search_503_when_no_sources(monkeypatch):
 
 
 def test_search_validates_sort(monkeypatch):
+    """Search validates sort 동작을 검증한다."""
     app = _fresh_app(monkeypatch, NAVER_CLIENT_ID="id", NAVER_CLIENT_SECRET="sec")
     with TestClient(app) as client:
         r = client.get("/api/search", params={"q": "국회직 8급", "sort": "bogus"})

@@ -36,6 +36,7 @@ FRONTEND_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
 #  응답 모델
 # --------------------------------------------------------------------------- #
 class ResultItem(BaseModel):
+    """검색 결과 한 건(제목·링크·스니펫·출처·점수)."""
     title: str
     url: str
     snippet: str
@@ -47,6 +48,7 @@ class ResultItem(BaseModel):
 
 
 class SearchResponse(BaseModel):
+    """/api/search 응답(결과 목록 + 변형·총계·캐시·쿼터 메타)."""
     query: str
     variants: list[str]
     total: int
@@ -60,11 +62,13 @@ class SearchResponse(BaseModel):
 
 
 class SourceInfo(BaseModel):
+    """소스 칩 한 개(키 + 표시 라벨)."""
     key: str
     label: str
 
 
 class MetaResponse(BaseModel):
+    """/api/meta 응답(활성 소스·카테고리·쿼터 잔량 등)."""
     naver_configured: bool
     demo_mode: bool
     secondary_available: bool
@@ -78,6 +82,7 @@ class MetaResponse(BaseModel):
 # --------------------------------------------------------------------------- #
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """공유 httpx 클라이언트·쿼터·캐시·오케스트레이터를 구성/정리한다."""
     settings = get_settings()
     client = httpx.AsyncClient(timeout=8.0)
     quota = QuotaGuard(settings.naver_daily_quota_guard)
@@ -145,6 +150,7 @@ app.add_middleware(
 # --------------------------------------------------------------------------- #
 @app.get("/api/health")
 async def health(request: Request) -> dict:
+    """헬스체크: 상태·설정 여부·활성 어댑터·쿼터 잔량."""
     settings = request.app.state.settings
     orch: SearchOrchestrator = request.app.state.orchestrator
     return {
@@ -158,6 +164,7 @@ async def health(request: Request) -> dict:
 
 @app.get("/api/meta", response_model=MetaResponse)
 async def meta(request: Request) -> MetaResponse:
+    """프론트 초기화용 메타데이터(선택 가능한 소스 칩 등)를 반환한다."""
     settings = request.app.state.settings
     orch: SearchOrchestrator = request.app.state.orchestrator
     secondary_available = any(getattr(a, "is_secondary", False) for a in orch.adapters)
@@ -192,6 +199,7 @@ async def search(
     page: int = Query(1, ge=1, le=50),
     page_size: int = Query(20, ge=1, le=50),
 ) -> SearchResponse:
+    """합격후기 검색 엔드포인트(소스 미설정 503, 쿼터 초과 429)."""
     orch: SearchOrchestrator = request.app.state.orchestrator
     if not orch.adapters:
         raise HTTPException(
@@ -239,6 +247,7 @@ if FRONTEND_DIST.is_dir():
 else:
     @app.get("/", response_class=HTMLResponse)
     async def root_placeholder() -> str:
+        """프론트 빌드(web/dist)가 없을 때 안내 HTML을 반환한다."""
         return (
             "<!doctype html><html lang='ko'><meta charset='utf-8'>"
             "<title>assembly8-review-finder</title>"

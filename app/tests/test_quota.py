@@ -6,6 +6,7 @@ from app.core.quota import QuotaExceededError, QuotaGuard
 
 
 def test_reserve_and_remaining():
+    """Reserve and remaining 동작을 검증한다."""
     q = QuotaGuard(3)
     q.reserve(2)
     assert q.used == 2
@@ -17,12 +18,14 @@ def test_reserve_and_remaining():
 
 
 def test_try_reserve():
+    """Try reserve 동작을 검증한다."""
     q = QuotaGuard(1)
     assert q.try_reserve(1) is True
     assert q.try_reserve(1) is False
 
 
 def test_daily_rollover():
+    """Daily rollover 동작을 검증한다."""
     days = [date(2026, 1, 1)]
     q = QuotaGuard(2, today_fn=lambda: days[0])
     q.reserve(2)
@@ -34,12 +37,14 @@ def test_daily_rollover():
 
 
 def test_zero_limit_blocks_everything():
+    """Zero limit blocks everything 동작을 검증한다."""
     q = QuotaGuard(0)
     with pytest.raises(QuotaExceededError):
         q.reserve(1)
 
 
 def test_reserve_rejects_non_positive():
+    """Reserve rejects non positive 동작을 검증한다."""
     q = QuotaGuard(5)
     for bad in (0, -1, -10):
         with pytest.raises(ValueError):

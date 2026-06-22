@@ -63,12 +63,15 @@ _FIXTURES: list[tuple[str, str, str, str, str, str]] = [
 
 
 class DemoAdapter(SourceAdapter):
+    """API 키 없이 동작하는 샘플 데이터 어댑터(데모/오프라인 전용)."""
     name = "demo"
 
     def __init__(self) -> None:
+        """Init."""
         self.enabled = True
 
     def supported_categories(self) -> list[str]:
+        """Supported categories."""
         return ["blog", "cafe", "web", "news"]
 
     async def search(
@@ -79,6 +82,7 @@ class DemoAdapter(SourceAdapter):
         sort: str = "sim",
         categories: Optional[list[str]] = None,
     ) -> list[NormalizedResult]:
+        """선택 카테고리에 해당하는 샘플 결과를 반환한다."""
         cats = set(categories or ["blog", "cafe", "web"])
         out: list[NormalizedResult] = []
         for title, url, snippet, category, label, posted in _FIXTURES:

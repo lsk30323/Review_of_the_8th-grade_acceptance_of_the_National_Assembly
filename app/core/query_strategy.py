@@ -22,19 +22,23 @@ _WS_RE = re.compile(r"\s+")
 
 
 def _norm(s: str | None) -> str:
+    """Norm."""
     return _WS_RE.sub(" ", s or "").strip()
 
 
 def _has_any(text: str, tokens: list[str]) -> bool:
+    """Has any."""
     compact = (text or "").replace(" ", "")
     return any(tok.replace(" ", "") in compact for tok in tokens)
 
 
 def has_core_signal(text: str) -> bool:
+    """Has core signal."""
     return _has_any(text, CORE_SIGNAL_TOKENS)
 
 
 def has_intent_signal(text: str) -> bool:
+    """Has intent signal."""
     return _has_any(text, INTENT_SIGNAL_TOKENS)
 
 
@@ -49,6 +53,7 @@ def build_query_variants(
     variants: list[str] = []
 
     def add(q: str) -> None:
+        """Add."""
         q = _norm(q)
         if q and q not in variants:
             variants.append(q)
@@ -80,6 +85,7 @@ def build_query_variants(
 
 
 def with_site_restriction(query: str, site: str) -> str:
+    """With site restriction."""
     return f"{_norm(query)} site:{site}"
 
 
