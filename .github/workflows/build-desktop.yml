@@ -52,7 +52,10 @@ jobs:
         env:
           # 서명 인증서가 없으므로 자동 서명 탐색을 끈다(미서명 산출물).
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GH_TOKEN은 넘기지 않는다. 토큰이 보이면 electron-builder가 GitHub
+          # 게시(update-info) 경로를 추론하다가 publish 설정 부재로 죽는다
+          # (createUpdateInfoTasks: Cannot read properties of null). 빌드 스텝은
+          # --publish never라 토큰이 불필요하며, 릴리스 첨부는 아래 별도 스텝이 담당한다.
         run: |
           npm install
           npx electron-builder --publish never
