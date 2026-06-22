@@ -1,0 +1,74 @@
+name: Build Android APK
+
+# 빌드된 PWA(web/dist)를 Capacitor로 감싸 디버그 APK를 만든다.
+#  - 수동 실행 시 백엔드 URL을 입력으로 주입할 수 있다(VITE_API_BASE).
+#    미입력이면 저장소 변수 vars.VITE_API_BASE → 그것도 없으면 빈 값으로 빌드.
+#  - 태그 푸시면 동일 태그의 GitHub Release에 APK를 첨부한다.
+on:
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: "백엔드 API 베이스 URL (VITE_API_BASE). 비우면 저장소 변수/빈 값 사용."
+        required: false
+        default: ""
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      # 1) 프론트 빌드. 모바일 웹뷰는 capacitor://localhost 오리진이라 상대 /api 가
+      #    자체 백엔드로 가지 않는다 → 백엔드 절대 URL을 VITE_API_BASE로 주입한다.
+      - name: Build web frontend
+        working-directory: web
+        env:
+          VITE_API_BASE: ${{ github.event.inputs.api_base || vars.VITE_API_BASE }}
+        run: |
+          npm ci
+          npm run build
+
+      # 2) Capacitor Android 네이티브 프로젝트 생성 + 동기화 (web/android는 .gitignore)
+      - name: Add & sync Capacitor Android
+        working-directory: web
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      # 3) 디버그 APK 빌드
+      - name: Assemble debug APK
+        working-directory: web/android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: web/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Attach to release (tags only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: web/android/app/build/outputs/apk/debug/app-debug.apk

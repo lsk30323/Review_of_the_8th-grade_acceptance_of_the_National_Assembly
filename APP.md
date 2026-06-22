@@ -99,6 +99,40 @@ npx --prefix web cap open android
 
 ---
 
+## 3) CI 자동 빌드 (GitHub Actions)
+
+로컬 환경 없이도 GitHub Actions가 설치 파일을 대신 만들어 줍니다.
+
+- `.github/workflows/build-desktop.yml` — Windows/macOS/Linux 러너에서 각각
+  `.exe`(NSIS) / `.dmg` / `AppImage` 를 빌드. 미서명 산출물.
+- `.github/workflows/build-android.yml` — Ubuntu 러너에서 Capacitor로 디버그 `.apk` 빌드.
+
+### 실행 방법
+1. **수동**: GitHub → Actions 탭 → 해당 워크플로 → "Run workflow".
+   - Android는 실행 시 `백엔드 URL`(VITE_API_BASE)을 입력할 수 있습니다(미입력 시 빈 값/저장소 변수).
+2. **태그 릴리스**: `v1.0.0` 처럼 `v*` 태그를 푸시하면 두 워크플로가 모두 돌고,
+   같은 태그의 GitHub **Release** 에 산출물(.exe/.dmg/AppImage/.apk)이 자동 첨부됩니다.
+
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+
+### 산출물 받기
+- 수동 실행: 워크플로 실행 페이지 하단의 **Artifacts** 에서 내려받습니다
+  (`desktop-windows` / `desktop-macos` / `desktop-linux` / `android-debug-apk`).
+- 태그 실행: 저장소 **Releases** 페이지의 첨부 파일.
+
+### Android 백엔드 URL 기본값(선택)
+태그 릴리스에서도 항상 같은 백엔드를 쓰려면 저장소 **Settings → Secrets and variables →
+Actions → Variables** 에 `VITE_API_BASE` 변수를 추가하세요(예: `https://your-backend.example.com`).
+미설정 시 빈 값으로 빌드되어 앱이 백엔드를 찾지 못합니다(디버그 산출물 용도).
+
+> 참고: 데스크톱 CI 산출물은 Electron 셸 + `web/dist` 까지만 포함합니다. 파이썬 미설치 PC용
+> 완전 자립형 배포는 백엔드를 PyInstaller로 묶어 `extraResources` 로 동봉하는 추가 작업이 필요합니다.
+
+---
+
 ## iOS (참고)
 동일하게 `npx cap add ios` 후 `npx cap open ios` 로 진행하며, 빌드/배포에는 macOS + Xcode가
 필요합니다. (현재 저장소는 Android 구성을 기본 제공합니다.)
