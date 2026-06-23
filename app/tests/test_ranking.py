@@ -25,6 +25,24 @@ def test_noise_ad_domain():
     assert is_noise(r) is True
 
 
+def test_noise_gated_cafe_domain():
+    """회원 전용(게이트) 네이버 카페 URL은 공개 URL이 아니므로 제외한다."""
+    r = _r("국회직 8급 합격후기", "국회직 8급 합격 공부법", url="https://cafe.naver.com/gosipass/123")
+    assert is_noise(r) is True
+    m = _r("국회직 8급 합격후기", "국회직 8급 합격 공부법", url="https://m.cafe.naver.com/gosipass/123")
+    assert is_noise(m) is True
+
+
+def test_rank_drops_gated_cafe_links():
+    """랭킹 단계에서 카페(게이트) 링크가 제외되고 공개 URL만 남는다."""
+    public = _r("국회직 8급 합격후기", "국회직 8급 합격 공부법", url="https://blog.naver.com/a", posted="2026-05-01")
+    gated = _r("국회직 8급 합격후기", "국회직 8급 합격 공부법", url="https://cafe.naver.com/x/1", posted="2026-05-01")
+    ranked = rank_results([public, gated], today=TODAY)
+    urls = [x.url for x in ranked]
+    assert "https://blog.naver.com/a" in urls
+    assert all("cafe.naver.com" not in u for u in urls)
+
+
 def test_noise_heavy_ads_without_intent_title():
     """Noise heavy ads without intent title 동작을 검증한다."""
     r = _r("국회직 8급 대비반 안내", "수강료 할인 이벤트 등록금 환급")

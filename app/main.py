@@ -168,9 +168,9 @@ async def meta(request: Request) -> MetaResponse:
     settings = request.app.state.settings
     orch: SearchOrchestrator = request.app.state.orchestrator
     secondary_available = any(getattr(a, "is_secondary", False) for a in orch.adapters)
+    # 공개 URL만 노출하는 정책 → 회원 전용 글이 많은 카페는 선택 칩에서 제외한다.
     categories = [
         SourceInfo(key="blog", label="블로그"),
-        SourceInfo(key="cafe", label="카페"),
         SourceInfo(key="web", label="웹문서"),
         SourceInfo(key="news", label="뉴스"),
     ]
@@ -192,8 +192,8 @@ async def search(
     request: Request,
     q: str = Query(..., min_length=1, max_length=100, description="검색 키워드"),
     sources: str = Query(
-        "blog,cafe,web",
-        description="쉼표 구분: blog,cafe,web,news (+ google = 보조 SERP 소스, 키 설정 시)",
+        "blog,web",
+        description="쉼표 구분: blog,web,news (+ google = 보조 SERP 소스, 키 설정 시). 카페는 회원 전용 글이 많아 제외.",
     ),
     sort: str = Query("sim", pattern="^(sim|date)$", description="sim(관련성) | date(최신순)"),
     page: int = Query(1, ge=1, le=50),

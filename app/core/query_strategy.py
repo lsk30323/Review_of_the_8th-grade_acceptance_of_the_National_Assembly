@@ -16,7 +16,8 @@ CORE_SIGNAL_TOKENS = ["국회직", "국회사무처", "국회8급"]
 INTENT_SIGNAL_TOKENS = ["합격", "후기", "수기", "최종합격", "공부법", "면접", "필기"]
 
 # 신뢰 출처 (site 제한용 — 보조 소스/구글 사용 시)
-TRUSTED_SITES = ["blog.naver.com", "cafe.naver.com", "tistory.com"]
+# 공개 URL 정책상 회원 전용 글이 많은 cafe.naver.com은 site 제한 대상에서 제외한다.
+TRUSTED_SITES = ["blog.naver.com", "tistory.com"]
 
 _WS_RE = re.compile(r"\s+")
 

@@ -71,3 +71,17 @@
   - 데스크톱 산출물은 Electron 셸 + `web/dist`까지만. 완전 자립형은 백엔드 PyInstaller 동봉 별도 필요.
   - 산출물 이름: `desktop-windows`/`desktop-macos`/`desktop-linux`/`android-debug-apk`.
 - **검증 한계**: 워크플로 자체는 GitHub Actions에서 실행되며, 이 샌드박스에선 YAML 유효성만 확인.
+
+## P9 공개 URL 정책 (게이트 소스 제외)
+- **만든 것**: 검색 결과를 **회원 가입/로그인 없이 열람 가능한 공개 URL로 제한**.
+  - 기본 카테고리에서 `cafe` 제거 → `blog`+`web`. (`naver.DEFAULT_CATEGORIES`, `orchestrator.default_categories`,
+    `main.py` `/api/search` 기본값, `/api/meta` 칩, 프론트 `DEFAULT_SOURCES`/칩 모두 일치.)
+  - `orchestrator.NAVER_CATEGORIES`에서 `cafe` 제외 → API `sources=cafe`는 무시(기본으로 폴백).
+  - **도메인 필터**(`ranking.GATED_DOMAINS = ("cafe.naver.com",)` + `is_noise`): 어느 카테고리로
+    들어오든(특히 webkr에 섞이는) `cafe.naver.com`/`m.cafe.naver.com` 링크를 제외. 이게 실질 차단 지점.
+  - `ranking.TRUSTED_SOURCE_BONUS`에서 `naver_cafe` 가점 제거, `query_strategy.TRUSTED_SITES`에서
+    `cafe.naver.com` 제거(보조 소스 site 제한 대상에서도 빠짐). 데모 픽스처의 카페 URL → 공개 URL로 교체.
+- **주의점**: 네이버 어댑터의 `CATEGORY_ENDPOINTS`에는 `cafe`가 남아 있어(명시 호출 시 동작) 하위호환
+  유지. 게이트 도메인을 늘리려면 `GATED_DOMAINS`에 추가만 하면 됨. 공개 카페까지 일괄 제외되는 한계는
+  검색 API만으로 공개/비공개 판별이 불가하기 때문(자체 크롤 금지 원칙).
+- **테스트**: `pytest` 60개 통과(게이트 도메인 `is_noise`/랭킹 제외 케이스 추가). 프론트 `tsc` 통과.
