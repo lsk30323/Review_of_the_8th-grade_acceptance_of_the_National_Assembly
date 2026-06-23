@@ -43,6 +43,25 @@ def test_rank_drops_gated_cafe_links():
     assert all("cafe.naver.com" not in u for u in urls)
 
 
+def test_allowlisted_cafe_not_noise():
+    """허용목록(공개 카페) 글은 통과, 목록에 없는 카페는 계속 제외한다."""
+    allow = frozenset({"goodcafe"})
+    ok = _r("국회직 8급 합격후기", "국회직 8급 합격 공부법", url="https://cafe.naver.com/goodcafe/10")
+    assert is_noise(ok, cafe_allowlist=allow) is False
+    other = _r("국회직 8급 합격후기", "국회직 8급 합격 공부법", url="https://cafe.naver.com/other/10")
+    assert is_noise(other, cafe_allowlist=allow) is True
+    # 신형 ca-fe URL은 slug 식별 불가 → 게이트 처리
+    cafe_new = _r("국회직 8급 합격후기", "국회직 8급 합격 공부법", url="https://cafe.naver.com/ca-fe/cafes/123/articles/1")
+    assert is_noise(cafe_new, cafe_allowlist=allow) is True
+
+
+def test_rank_keeps_allowlisted_cafe():
+    """랭킹 단계에서 허용목록 카페 글은 남는다."""
+    pub = _r("국회직 8급 합격후기", "국회직 8급 합격 공부법", url="https://cafe.naver.com/goodcafe/1", posted="2026-05-01")
+    ranked = rank_results([pub], today=TODAY, cafe_allowlist=frozenset({"goodcafe"}))
+    assert any("cafe.naver.com/goodcafe" in x.url for x in ranked)
+
+
 def test_noise_heavy_ads_without_intent_title():
     """Noise heavy ads without intent title 동작을 검증한다."""
     r = _r("국회직 8급 대비반 안내", "수강료 할인 이벤트 등록금 환급")

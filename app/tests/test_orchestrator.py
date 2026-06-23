@@ -101,6 +101,21 @@ async def test_secondary_skipped_by_default():
     assert secondary.calls == []
 
 
+def test_cafe_queried_only_with_allowlist():
+    """허용목록이 없으면 cafe 카테고리를 조회하지 않고, 있으면 조회한다."""
+    no_list = SearchOrchestrator(adapters=[FakeAdapter(_one_result)], cache=TTLCache(0))
+    cats, _ = no_list._resolve_sources(["blog", "cafe"])
+    assert "cafe" not in cats
+    assert no_list._resolve_sources(None)[0] == ["blog", "web"]
+
+    with_list = SearchOrchestrator(
+        adapters=[FakeAdapter(_one_result)], cache=TTLCache(0), cafe_allowlist=frozenset({"goodcafe"})
+    )
+    cats2, _ = with_list._resolve_sources(["blog", "cafe"])
+    assert "cafe" in cats2
+    assert "cafe" in with_list._resolve_sources(None)[0]  # 허용목록 → 기본에 cafe 포함
+
+
 async def test_secondary_called_when_google_selected():
     """Secondary called when google selected 동작을 검증한다."""
     primary = FakeAdapter(_one_result)

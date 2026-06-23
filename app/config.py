@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     naver_display: int = 20
     demo_mode: bool = False
 
+    # 공개 카페 허용목록: 가입 없이 열람 가능한 카페만 결과에 노출한다(쉼표 구분).
+    # 값은 카페 식별자(slug) = cafe.naver.com/<slug> 의 <slug>. 예: "9waytutor,gohackers"
+    # 비어 있으면 모든 네이버 카페 글을 제외(공개 URL만 정책).
+    public_cafe_allowlist: str = ""
+
     # CORS (프론트 dev 서버 + Capacitor/Electron 앱 오리진, 쉼표 구분)
     cors_origins: str = (
         "http://localhost:5173,http://127.0.0.1:5173,"
@@ -61,6 +66,13 @@ class Settings(BaseSettings):
     def cors_origin_list(self) -> list[str]:
         """Cors origin list."""
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def public_cafe_allowlist_set(self) -> frozenset[str]:
+        """공개 카페 허용목록(slug, 소문자) 집합."""
+        return frozenset(
+            s.strip().lower() for s in self.public_cafe_allowlist.split(",") if s.strip()
+        )
 
 
 @lru_cache
