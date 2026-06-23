@@ -10,7 +10,7 @@ import {
 } from "./render";
 import type { ResultItem, SortKey, SourceInfo } from "./types";
 
-const DEFAULT_SOURCES = ["blog", "cafe", "web"];
+const DEFAULT_SOURCES = ["blog", "web"];
 const PAGE_SIZE = 20;
 const PREFS_KEY = "a8finder.prefs.v1";
 
@@ -48,9 +48,9 @@ let currentPage = 1;
 let totalResults = 0;
 let accumulated: ResultItem[] = [];
 let loading = false;
+// 공개 URL만 노출하는 정책 → 회원 전용 글이 많은 카페는 칩에서 제외한다.
 let categories: SourceInfo[] = [
   { key: "blog", label: "블로그" },
-  { key: "cafe", label: "카페" },
   { key: "web", label: "웹문서" },
   { key: "news", label: "뉴스" },
 ];

@@ -26,7 +26,9 @@ CATEGORY_ENDPOINTS: dict[str, tuple[str, str, str]] = {
     "web": ("https://openapi.naver.com/v1/search/webkr.json", "naver_web", "네이버 웹문서"),
     "news": ("https://openapi.naver.com/v1/search/news.json", "naver_news", "네이버 뉴스"),
 }
-DEFAULT_CATEGORIES = ["blog", "cafe", "web"]
+# 기본 카테고리는 공개 URL이 보장되는 블로그·웹문서만 사용한다.
+# 카페(cafearticle)는 회원 전용 글이 많아 기본에서 제외(명시 요청 시에만 호출 가능).
+DEFAULT_CATEGORIES = ["blog", "web"]
 
 
 def _parse_naver_date(item: dict) -> Optional[str]:

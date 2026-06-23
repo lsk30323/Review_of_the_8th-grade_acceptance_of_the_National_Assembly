@@ -21,16 +21,24 @@ AD_KEYWORDS = [
 AD_DOMAINS = [
     "eduwill", "hackers", "willbes", "megagong", "etoos", "pmg", "gongdori",
 ]
+# 회원 가입/로그인 없이는 본문을 볼 수 없는 게이트(접근 제한) 도메인.
+# 공개 URL만 노출하기 위해 제외한다. 네이버 카페 글 다수가 회원 전용이며,
+# 웹문서(webkr) 검색에 섞여 들어오는 카페 링크도 여기서 함께 걸러진다.
+GATED_DOMAINS = ("cafe.naver.com",)
 # 신뢰 출처 가점
 TRUSTED_SOURCE_BONUS = {
     "naver_blog": 0.6,
-    "naver_cafe": 0.6,
     "naver_web": 0.2,
     "naver_news": 0.3,
     "serper": 0.2,
     "google_cse": 0.2,
     "demo": 0.4,
 }
+
+
+def _is_gated(dom: str) -> bool:
+    """게이트(회원 전용) 도메인인가. m.cafe.naver.com 등 서브도메인도 포함."""
+    return any(dom == g or dom.endswith("." + g) for g in GATED_DOMAINS)
 
 
 def _domain(url: str) -> str:
@@ -45,6 +53,9 @@ def is_noise(r: NormalizedResult) -> bool:
     """노이즈(제외 대상) 여부. (지시서 7.2 −제외 규칙)"""
     text = f"{r.title} {r.snippet}"
     dom = _domain(r.url)
+    # 회원 전용(게이트) 도메인은 공개 URL이 아니므로 제외한다.
+    if _is_gated(dom):
+        return True
     if any(d in dom for d in AD_DOMAINS):
         return True
     # 핵심어가 제목·본문 어디에도 없으면 제외

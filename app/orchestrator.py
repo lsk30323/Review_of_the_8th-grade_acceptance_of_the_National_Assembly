@@ -16,8 +16,8 @@ from .core.ranking import rank_results
 
 log = logging.getLogger(__name__)
 
-# 네이버/데모가 이해하는 카테고리
-NAVER_CATEGORIES = ("blog", "cafe", "web", "news")
+# 네이버/데모가 이해하는 카테고리 (공개 URL 정책상 cafe는 선택 대상에서 제외)
+NAVER_CATEGORIES = ("blog", "web", "news")
 # 보조 소스(구글/SERP)를 가리키는 UI source 키 (별칭 포함)
 SECONDARY_SOURCE_KEYS = {"google", "serper", "google_cse"}
 
@@ -47,7 +47,7 @@ class SearchOrchestrator:
         cache: Cache,
         quota: QuotaGuard | None = None,
         max_variants: int = 4,
-        default_categories: tuple[str, ...] = ("blog", "cafe", "web"),
+        default_categories: tuple[str, ...] = ("blog", "web"),
         naver_display: int = 20,
     ) -> None:
         """활성 어댑터만 보관하고 캐시·쿼터·변형 한도를 설정한다."""

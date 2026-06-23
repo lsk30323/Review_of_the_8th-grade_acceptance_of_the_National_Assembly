@@ -24,16 +24,16 @@ _FIXTURES: list[tuple[str, str, str, str, str, str]] = [
         "blog", "네이버 블로그", "2024-11-02",
     ),
     (
-        "[카페글] 국회직 8급 필기 합격 컷과 체감 난이도",
-        "https://cafe.naver.com/gosipass/123456",
+        "국회직 8급 필기 합격 컷과 체감 난이도 정리",
+        "https://gosipass.tistory.com/123456",
         "올해 국회직 8급 필기 합격 컷 정리와 과목별 체감 난이도 후기 모음입니다.",
-        "cafe", "네이버 카페", "2025-05-20",
+        "web", "네이버 웹문서", "2025-05-20",
     ),
     (
         "국회 8급 공무원 면접 후기 — 질문 리스트와 복장",
-        "https://cafe.naver.com/gosipass/123999",
+        "https://blog.naver.com/demo-user/223000000099",
         "국회 8급 공무원 면접 후기. 실제 받은 질문 리스트와 분위기, 복장 팁을 적어둡니다.",
-        "cafe", "네이버 카페", "2024-12-15",
+        "blog", "네이버 블로그", "2024-12-15",
     ),
     (
         "국회직 8급 합격후기와 1년 스터디 플랜",
@@ -72,7 +72,7 @@ class DemoAdapter(SourceAdapter):
 
     def supported_categories(self) -> list[str]:
         """Supported categories."""
-        return ["blog", "cafe", "web", "news"]
+        return ["blog", "web", "news"]
 
     async def search(
         self,
@@ -83,7 +83,7 @@ class DemoAdapter(SourceAdapter):
         categories: Optional[list[str]] = None,
     ) -> list[NormalizedResult]:
         """선택 카테고리에 해당하는 샘플 결과를 반환한다."""
-        cats = set(categories or ["blog", "cafe", "web"])
+        cats = set(categories or ["blog", "web"])
         out: list[NormalizedResult] = []
         for title, url, snippet, category, label, posted in _FIXTURES:
             if category not in cats:
