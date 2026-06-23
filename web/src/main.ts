@@ -10,7 +10,9 @@ import {
 } from "./render";
 import type { ResultItem, SortKey, SourceInfo } from "./types";
 
-const DEFAULT_SOURCES = ["blog", "web"];
+// cafe는 백엔드가 공개 카페 허용목록을 설정해 메타에 노출할 때만 칩으로 나타난다
+// (미노출이면 loadMeta에서 selectedSources에서 자동 정리됨).
+const DEFAULT_SOURCES = ["blog", "cafe", "web"];
 const PAGE_SIZE = 20;
 const PREFS_KEY = "a8finder.prefs.v1";
 

@@ -16,8 +16,9 @@ from .core.ranking import rank_results
 
 log = logging.getLogger(__name__)
 
-# 네이버/데모가 이해하는 카테고리 (공개 URL 정책상 cafe는 선택 대상에서 제외)
-NAVER_CATEGORIES = ("blog", "web", "news")
+# 네이버/데모가 이해하는 카테고리. cafe는 공개 카페 허용목록이 설정됐을 때만 실제 조회된다
+# (허용목록이 비면 _resolve_sources에서 제거 → 쿼터 낭비 방지).
+NAVER_CATEGORIES = ("blog", "cafe", "web", "news")
 # 보조 소스(구글/SERP)를 가리키는 UI source 키 (별칭 포함)
 SECONDARY_SOURCE_KEYS = {"google", "serper", "google_cse"}
 
@@ -49,13 +50,19 @@ class SearchOrchestrator:
         max_variants: int = 4,
         default_categories: tuple[str, ...] = ("blog", "web"),
         naver_display: int = 20,
+        cafe_allowlist: frozenset[str] = frozenset(),
     ) -> None:
         """활성 어댑터만 보관하고 캐시·쿼터·변형 한도를 설정한다."""
         self.adapters = [a for a in adapters if getattr(a, "enabled", False)]
         self.cache = cache
         self.quota = quota
         self.max_variants = max_variants
-        self.default_categories = list(default_categories)
+        self.cafe_allowlist = frozenset(cafe_allowlist)
+        # 공개 카페 허용목록이 있으면 기본 카테고리에 cafe를 추가(공개 카페 글도 조회).
+        default = list(default_categories)
+        if self.cafe_allowlist and "cafe" not in default:
+            default.append("cafe")
+        self.default_categories = default
         self.naver_display = naver_display
 
     def _resolve_sources(self, sources: list[str] | None) -> tuple[list[str], bool]:
@@ -70,6 +77,9 @@ class SearchOrchestrator:
         include_secondary = any(s in SECONDARY_SOURCE_KEYS for s in sources)
         if not categories and not include_secondary:
             categories = list(self.default_categories)
+        # 허용목록이 없으면 cafe는 어차피 전부 걸러지므로 조회하지 않는다(쿼터 절약).
+        if not self.cafe_allowlist:
+            categories = [c for c in categories if c != "cafe"]
         return categories, include_secondary
 
     @staticmethod
@@ -157,4 +167,4 @@ class SearchOrchestrator:
         if not raw and quota_hit:
             raise QuotaExceededError("일일 호출 한도를 초과해 검색을 수행할 수 없습니다.")
 
-        return rank_results(raw, sort=sort)
+        return rank_results(raw, sort=sort, cafe_allowlist=self.cafe_allowlist)

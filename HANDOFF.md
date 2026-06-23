@@ -85,3 +85,19 @@
   유지. 게이트 도메인을 늘리려면 `GATED_DOMAINS`에 추가만 하면 됨. 공개 카페까지 일괄 제외되는 한계는
   검색 API만으로 공개/비공개 판별이 불가하기 때문(자체 크롤 금지 원칙).
 - **테스트**: `pytest` 60개 통과(게이트 도메인 `is_noise`/랭킹 제외 케이스 추가). 프론트 `tsc` 통과.
+
+## P10 공개 카페 허용목록 (P9 일부 갱신)
+- **만든 것**: P9에서 카페를 전면 제외했으나, **허용목록에 등록한 공개 카페 글은 통과**하도록 변경.
+  검색 API만으로 공개/비공개 자동 판별이 불가하므로 명시적 allowlist 방식.
+  - `is_noise(..., cafe_allowlist)` / `rank_results(..., cafe_allowlist)`: `cafe.naver.com` 링크는
+    URL의 카페 slug(`cafe.naver.com/<slug>/...`)가 허용목록에 있을 때만 통과. 신형 `ca-fe/...`는
+    slug 식별 불가 → 게이트 처리. webkr에 섞인 카페 링크도 동일 규칙.
+  - 설정 `PUBLIC_CAFE_ALLOWLIST`(env, 쉼표 구분 slug) → `settings.public_cafe_allowlist_set`(frozenset).
+    비면 P9와 동일(모든 카페 제외).
+  - `SearchOrchestrator(cafe_allowlist=...)`: 허용목록 있으면 기본 카테고리에 `cafe` 추가·조회 허용,
+    없으면 `_resolve_sources`가 `cafe` 제거(쿼터 절약). `NAVER_CATEGORIES`에 `cafe` 복원.
+  - `/api/meta`는 허용목록 설정 시에만 "카페" 칩 노출. 프론트 `DEFAULT_SOURCES`에 `cafe` 포함
+    (메타에 없으면 `loadMeta`가 자동 정리).
+- **운영**: 카페 추가 = Render/.env의 `PUBLIC_CAFE_ALLOWLIST`에 slug 추가 후 재시작(코드 재빌드 불필요).
+  slug = 카페 주소 `cafe.naver.com/<slug>`의 `<slug>`. 카페 단위 판별이라 개별 '멤버공개' 글은 예외.
+- **테스트**: `pytest` 63개 통과(허용목록 is_noise·랭킹·오케스트레이터 케이스 추가). 프론트 `tsc` 통과.

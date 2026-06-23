@@ -22,12 +22,14 @@ AD_DOMAINS = [
     "eduwill", "hackers", "willbes", "megagong", "etoos", "pmg", "gongdori",
 ]
 # 회원 가입/로그인 없이는 본문을 볼 수 없는 게이트(접근 제한) 도메인.
-# 공개 URL만 노출하기 위해 제외한다. 네이버 카페 글 다수가 회원 전용이며,
+# 기본적으로 공개 URL만 노출하기 위해 제외한다. 네이버 카페 글 다수가 회원 전용이며,
 # 웹문서(webkr) 검색에 섞여 들어오는 카페 링크도 여기서 함께 걸러진다.
+# 단, "공개 카페 허용목록"(cafe_allowlist)에 등록된 카페의 글은 통과시킨다.
 GATED_DOMAINS = ("cafe.naver.com",)
 # 신뢰 출처 가점
 TRUSTED_SOURCE_BONUS = {
     "naver_blog": 0.6,
+    "naver_cafe": 0.6,
     "naver_web": 0.2,
     "naver_news": 0.3,
     "serper": 0.2,
@@ -36,9 +38,34 @@ TRUSTED_SOURCE_BONUS = {
 }
 
 
-def _is_gated(dom: str) -> bool:
-    """게이트(회원 전용) 도메인인가. m.cafe.naver.com 등 서브도메인도 포함."""
+def _is_cafe_host(dom: str) -> bool:
+    """네이버 카페(게이트) 호스트인가. m.cafe.naver.com 등 서브도메인 포함."""
     return any(dom == g or dom.endswith("." + g) for g in GATED_DOMAINS)
+
+
+def _cafe_slug(url: str) -> str | None:
+    """카페 URL에서 카페 식별자(slug)를 뽑는다. cafe.naver.com/<slug>/<글번호> 형식.
+
+    신형 'ca-fe/...' URL은 경로에 slug가 없어 식별 불가 → None(게이트 처리).
+    """
+    try:
+        segs = [s for s in urlsplit(url).path.split("/") if s]
+    except ValueError:
+        return None
+    if not segs:
+        return None
+    first = segs[0].lower()
+    if first == "ca-fe":
+        return None
+    return first
+
+
+def _is_gated(dom: str, url: str, cafe_allowlist: frozenset[str]) -> bool:
+    """공개 URL이 아닌(게이트) 링크인가. 허용목록 카페는 게이트로 보지 않는다."""
+    if not _is_cafe_host(dom):
+        return False
+    slug = _cafe_slug(url)
+    return not (slug is not None and slug in cafe_allowlist)
 
 
 def _domain(url: str) -> str:
@@ -49,12 +76,12 @@ def _domain(url: str) -> str:
         return ""
 
 
-def is_noise(r: NormalizedResult) -> bool:
+def is_noise(r: NormalizedResult, *, cafe_allowlist: frozenset[str] = frozenset()) -> bool:
     """노이즈(제외 대상) 여부. (지시서 7.2 −제외 규칙)"""
     text = f"{r.title} {r.snippet}"
     dom = _domain(r.url)
-    # 회원 전용(게이트) 도메인은 공개 URL이 아니므로 제외한다.
-    if _is_gated(dom):
+    # 회원 전용(게이트) 링크는 공개 URL이 아니므로 제외한다(허용목록 카페는 예외).
+    if _is_gated(dom, r.url, cafe_allowlist):
         return True
     if any(d in dom for d in AD_DOMAINS):
         return True
@@ -144,12 +171,13 @@ def rank_results(
     sort: str = "sim",
     today: date | None = None,
     drop_noise: bool = True,
+    cafe_allowlist: frozenset[str] = frozenset(),
 ) -> list[NormalizedResult]:
     """노이즈 제거 → 점수 계산 → 중복 제거 → 정렬."""
     today = today or date.today()
     kept: list[NormalizedResult] = []
     for r in results:
-        if drop_noise and is_noise(r):
+        if drop_noise and is_noise(r, cafe_allowlist=cafe_allowlist):
             continue
         r.score = score_result(r, today=today)
         kept.append(r)
